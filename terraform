@@ -354,6 +354,7 @@ output "secret-bak" {
 }
 EOF
 
+rm -f terraform.sh
 cd ~/$MYDOMAIN/
 terraform init
 cd ~/$MYDOMAIN/
