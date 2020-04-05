@@ -48,7 +48,7 @@ cd ~/\$DOMINIO/
 terraform destroy --auto-approve
 cd
 rm -r \$DOMINIO --force
-rm destroy.sh credenciales.sh apply.sh check.sh archivos.sh centos.txt first.sh terraform.sh variables.sh terraform.tfstate -f
+rm destroy.sh credenciales.sh apply.sh check.sh archivos.sh centos.txt first.sh terraform.sh variables.sh pem.sh terraform.tfstate -f
 EOF
 
 cat <<EOF >> credenciales.sh
