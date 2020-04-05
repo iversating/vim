@@ -99,7 +99,7 @@ then
         wget -qO archivos.sh https://raw.githubusercontent.com/iversating/vim/master/archivos
         sh archivos.sh
     else
-        rm -f variables.sh
+        rm -f variables.sh centos.txt
         exit
     fi
 else
@@ -194,7 +194,7 @@ else
     then
         wget -qO archivos.sh https://raw.githubusercontent.com/iversating/vim/master/archivos && sh archivos.sh
     else
-        rm -f variables.sh
+        rm -f variables.sh centos.txt
         exit
     fi
 fi
