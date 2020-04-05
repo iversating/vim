@@ -1,5 +1,5 @@
 #! /bin/sh
-rm archivos.sh check.sh first.sh terraform.sh variables.sh terraform.tfstate -f
+rm archivos.sh check.sh first.sh terraform.sh variables.sh pem.sh terraform.tfstate -f
 printf "\033c"
 echo "*************************************************************************************************************"
 echo ""
