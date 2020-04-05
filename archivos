@@ -57,7 +57,7 @@ cd ~/\$DOMINIO/
 terraform output
 EOF
 
-cat <<EOF >> sh pem.sh
+cat <<EOF >> pem.sh
 cat .ingress/$MYSERVER.pem
 EOF
 
