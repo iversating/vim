@@ -1,0 +1,69 @@
+printf "\033c"
+if [ ! -f centos.txt ]
+then
+    echo "*************************************************************************************************"
+    echo ""
+    echo "***********                         CONSTRUCTOR WEB 'VIM 2.0'                         ***********"
+    echo "***********                                                                           ***********"
+    echo "***********                    https://ventasimpactantes.com/script                   ***********"
+    echo "***********                                                                           ***********"
+    echo "***********                          ! I M P O R T A N T E !                          ***********"
+    echo ""
+    echo "================================================================================================="
+    echo ""
+    echo "                                        ¡A T E N C I Ó N!"
+    echo ""
+    echo "           Para que este script funcione correctamente, acepta los términos de 'Centos7',"
+    echo ""
+    echo "           este es el sistema operativo que utilizaremos para crear tu Servidor. "
+    echo ""
+    echo "           Ingresa al enlace de abajo y haz clic en el botón"
+    echo ""
+    echo "                                    ' A c c e p t   T e r m s '"
+    echo ""
+    echo "           luego regresa aquí para continuar... si no ves el botón es porque ya aceptaste... "
+    echo ""   
+    echo "           Clic en este enlace, inicia sesion con tu cuenta de Amazon AWS y acepta los terminos:"
+    echo ""
+    echo ""
+    echo "                              https://bit.ly/aceptar-terminos-centos7a"
+    echo ""
+    echo ""
+    echo "================================================================================================="
+    echo ""
+    echo -n " * YA ACEPTASTE LOS TERMINOS PARA 'CENTOS7' EN LA PÁGINA ANTERIOR? (si/no): "
+    read INPUT
+    if [ $INPUT = "s" -o $INPUT = "si" -o $INPUT = "sí" -o $INPUT = "S" -o $INPUT = "SI" -o $INPUT = "SÍ" ]
+    then
+        touch centos.txt
+        wget -qO variables.sh https://raw.githubusercontent.com/iversating/vim/master/variables && sh variables.sh
+    else
+        rm -f first.sh
+        printf "\033c"
+        echo "*************************************************************************************************"
+        echo ""
+        echo "***********                         CONSTRUCTOR WEB 'VIM 2.0'                         ***********"
+        echo "***********                                                                           ***********"
+        echo "***********                    https://ventasimpactantes.com/script                   ***********"
+        echo "***********                                                                           ***********"
+        echo "***********                           !Vuelve a Intentarlo!                           ***********"
+        echo ""
+        echo "================================================================================================="
+        echo ""
+        echo "    Para poder continuar, asegúrate de ir a la siguiente página y haz clic en el botón de "
+        echo ""
+        echo "                                        ' Accept Terms '    "
+        echo ""
+        echo "    luego vuelve a esta página y ejecuta de nuevo este script escribiendo 'sh vim' y luego enter           "
+        echo ""
+        echo ""
+        echo "                            https://bit.ly/aceptar-terminos-centos7a"
+        echo ""
+        echo ""
+        echo "================================================================================================="
+        exit
+    fi
+else
+    wget -qO variables.sh https://raw.githubusercontent.com/iversating/vim/master/variables && sh variables.sh
+fi
+rm -f first.sh
