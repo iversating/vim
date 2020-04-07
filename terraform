@@ -464,6 +464,6 @@ cd ~/$MYDOMAIN/
 terraform init
 cd ~/$MYDOMAIN/
 terraform plan
-#cd ~/$MYDOMAIN/
-#terraform apply --auto-approve
+cd ~/$MYDOMAIN/
+terraform apply --auto-approve
 cd
