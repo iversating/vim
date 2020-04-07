@@ -36,7 +36,7 @@ then
     echo ""
     echo -n "   - Escribe 'no' para borrar estas credenciales y crear nuevas...                        "
     echo ""
-    echo -n "   - o presiona CTRL+C en tu teclado para salir (si/no) =                                 "
+    echo -n "   - o presiona CTRL+C en tu teclado para salir (si/no) = "
     read INPUT
     if [ $INPUT = "n" -o $INPUT = "no" -o $INPUT = "N" -o $INPUT = "NO" ]
     then
