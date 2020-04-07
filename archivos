@@ -76,7 +76,7 @@ mv ssllabs.sh restart.sh bk-local.sh rds.sh ejecutelocal.sh wordpress.sh permiso
 sudo yum install nano wget curl bind-utils -y
 sudo cp -ar "\$DOMINIO" /root/
 sudo mv 2.sh 3.sh aws-config.sh centminmod.sh /root/
-rm -f 1.sh
+sudo rm -f 1.sh
 sudo sh hostname.sh
 EOF
 
