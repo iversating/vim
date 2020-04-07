@@ -1,0 +1,387 @@
+#CREACIÓN DE ARCHIVOS
+if [ ! -d .ingress/ ]
+then
+mkdir .ingress/
+openssl genrsa -out .ingress/$MYSERVER.pem 2048
+ssh-keygen -y -f .ingress/$MYSERVER.pem > .ingress/$MYSERVER.pub
+cat <<EOF >> .ingress/tf.tfvars
+aws_access_key = "$accesskey"
+aws_secret_key = "$secretkey"
+cloudflare_email = "$CFEMAIL"
+cloudflare_api_key = "$CFAPI"
+EOF
+else
+        continue        
+fi
+mkdir $MYDOMAIN/ $MYDOMAIN/sh/
+cp .ingress/tf.tfvars $MYDOMAIN/terraform.tfvars
+cloudshell download .ingress/$MYSERVER.pem
+cat <<EOF >> apply.sh
+DOMINIO=$MYDOMAIN
+cd ~/\$DOMINIO/
+terraform apply --auto-approve
+EOF
+cat <<EOF >> destroy.sh
+printf "\033c"
+echo "*************************************************************************************************"
+echo "***********                                                                           ***********"
+echo "***********                         CONSTRUCTOR WEB 'VIM 2.0'                         ***********"
+echo "***********                                                                           ***********"
+echo "***********                    https://ventasimpactantes.com/script                   ***********"
+echo "***********                                                                           ***********"
+echo "================================================================================================="
+echo "===========                                                                           ==========="
+echo "===========                            ! A T E N C I Ó N !                            ==========="
+echo "===========                                                                           ==========="
+echo "================================================================================================="
+DOMINIO=$MYDOMAIN
+echo ""
+echo -n " * ¿ ESTAS SEGURO DE ELIMINAR EL SERVIDOR PARA \$DOMINIO Y BORRAR LA PÁGINA WEB ? *"
+echo ""
+echo -n " - Asegúrate de haber realizado una copia de seguridad de tus datos en \$DOMINIO"
+echo ""
+echo -n " * ESTE PROCESO ES ¡IRREVERSIBLE!. Escribe 'eliminar' para proceder (eliminar/cancelar) = "
+read INPUT
+if [ \$INPUT = "ELIMINAR" -o \$INPUT = "Eliminar" -o \$INPUT = "eliminar" ]
+then
+continue
+else
+exit
+fi
+cd ~/\$DOMINIO/
+terraform destroy
+cd
+rm -r \$DOMINIO --force
+rm destroy.sh credenciales.sh apply.sh check.sh archivos.sh centos.txt first.sh terraform.sh variables.sh pem.sh terraform.tfstate -f
+EOF
+
+cat <<EOF >> credenciales.sh
+DOMINIO=$MYDOMAIN
+cd ~/\$DOMINIO/
+terraform output
+EOF
+
+cat <<EOF >> pem.sh
+cat .ingress/$MYSERVER.pem
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/vim
+sudo su -
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/sh.sh
+DOMINIO=$MYDOMAIN
+mkdir \$DOMINIO
+sudo chmod +x *.sh
+sudo mv centminmod.sh aws-config.sh ssllabs.sh restart.sh bk-local.sh rds.sh ejecutelocal.sh wordpress.sh permisos.sh createbak.sh ejecutebak.sh deletebak.sh uninstall.sh \$DOMINIO
+sudo yum install nano wget curl bind-utils -y
+sudo cp -ar "\$DOMINIO" /root/
+sudo mv centmin vim.sh /root/
+sudo rm -f sh.sh
+sudo sh hostname.sh
+EOF
+
+#DATE HOSTNAME REBOOT
+cat <<EOF >> $MYDOMAIN/sh/hostname.sh
+TIMEZONE=America/Bogota
+SERVIDOR=servidor.$MYDOMAIN
+IP="\$(dig myip.opendns.com @resolver1.opendns.com +short)"
+sudo timedatectl set-timezone "\$TIMEZONE"
+sudo rm -f /etc/hostname
+sudo echo \$SERVIDOR >> /etc/hostname
+sudo hostnamectl set-hostname "\$SERVIDOR"
+sudo echo \$IP \$SERVIDOR hostname >> /etc/hosts
+sudo hostname servidor.ventasimpactantes.com
+sudo service network restart
+rm -f hostname.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/centmin
+DOMINIO=$MYDOMAIN
+mv /root/"\$DOMINIO"/centminmod.sh /root/
+sh /root/centminmod.sh
+rm -f /root/centmin
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/centminmod.sh
+#INSTALL CMM
+yum -y update; curl -O https://centminmod.com/betainstaller73.sh && chmod 0700 betainstaller73.sh && bash betainstaller73.sh
+
+#CUSTOM CONFIG
+touch /etc/centminmod/custom_config.inc
+# enable letsencrypt ssl certificate + dual RSA+ECDSA ssl certs https://centminmod.com/acmetool/
+echo "LETSENCRYPT_DETECT='y'" >> /etc/centminmod/custom_config.inc
+echo "DUALCERTS='y'" >> /etc/centminmod/custom_config.inc
+echo "NGINX_IPV='y'" >> /etc/centminmod/custom_config.inc
+# dynamically tune nginx ssl_session_cache in /usr/local/nginx/conf/ssl_include.conf based on system detected memory
+# https://community.centminmod.com/posts/76615/
+echo "NGINX_SSLCACHE_ALLOWOVERRIDE='y'" >> /etc/centminmod/custom_config.inc
+# SET_DEFAULT_MYSQLCHARSET='utf8mb4' to override MariaDB MySQL
+# default characterset and collation from default utf8 to utf8mb4
+# https://community.centminmod.com/threads/17949/
+echo "SET_DEFAULT_MYSQLCHARSET='utf8mb4'" >> /etc/centminmod/custom_config.inc
+# enable nginx backlog override https://community.centminmod.com/threads/17620/
+echo "AUTOHARDTUNE_NGINXBACKLOG='y'" >> /etc/centminmod/custom_config.inc
+# enable zstd compressed logrotation for nginx & php-fpm https://community.centminmod.com/threads/16374/
+echo "ZSTD_LOGROTATE_NGINX='y'" >> /etc/centminmod/custom_config.inc
+echo "ZSTD_LOGROTATE_PHPFPM='y'" >> /etc/centminmod/custom_config.inc
+# enable nginx zero downtime on the fly nginx binary upgrades https://community.centminmod.com/threads/8000/
+echo "NGINX_ZERODT='y'" >> /etc/centminmod/custom_config.inc
+# enable brotli compression https://community.centminmod.com/threads/10688/
+echo "NGINX_LIBBROTLI='y'" >> /etc/centminmod/custom_config.inc
+echo "NGXDYNAMIC_BROTLI='y'" >> /etc/centminmod/custom_config.inc
+# boost PHP 7 performance by enabling Profile Guided Optimisation flag
+# https://centminmod.com/perf/
+# will dramatically increase PHP-FPM compile/install times but result in
+# 5-20% faster PHP 7+ performance. PHP_PGO='y' only works with servers with
+# 2+ or more cpu threads. However, you can force PHP PGO optimisations with
+# 1 cpu thread servers via PHP_PGO_ALWAYS='y'
+echo "PHP_PGO='y'" >> /etc/centminmod/custom_config.inc
+echo "PHP_PGO_ALWAYS='y'" >> /etc/centminmod/custom_config.inc
+# php compression extensions https://community.centminmod.com/posts/70777/
+echo "PHP_BROTLI='y'" >> /etc/centminmod/custom_config.inc
+echo "PHP_LZFOUR='y'" >> /etc/centminmod/custom_config.inc
+echo "PHP_LZF='y'" >> /etc/centminmod/custom_config.inc
+echo "PHP_ZSTD='y'" >> /etc/centminmod/custom_config.inc
+# php file info
+echo "PHPFINFO='y'" >> /etc/centminmod/custom_config.inc
+echo "VHOSTCTRL_CLOUDFLAREINC='y'"  >> /etc/centminmod/custom_config.inc
+
+#AUDIT CSF FIREWALL
+# install and configure auditd https://community.centminmod.com/posts/37680/
+echo "AUDITD_ENABLE='y'" >> /etc/centminmod/custom_config.inc
+/usr/local/src/centminmod/tools/auditd.sh setup
+# setup extended CSF Firewall blocklists https://community.centminmod.com/posts/50060/
+/usr/local/src/centminmod/tools/csf-advancetweaks.sh
+
+#FAIL2BAN
+# enable CSF Firewall native fail2ban like support
+# https://community.centminmod.com/posts/62343/
+csf --profile backup backup-b4-customregex
+cp -a /usr/local/csf/bin/regex.custom.pm /usr/local/csf/bin/regex.custom.pm.bak
+egrep 'CUSTOM1_LOG|CUSTOM2_LOG|CUSTOM3_LOG|CUSTOM4_LOG' /etc/csf/csf.conf
+sed -i "s|CUSTOM1_LOG = .*|CUSTOM1_LOG = \"/home/nginx/domains/\*/log/access.log\"|" /etc/csf/csf.conf
+sed -i "s|CUSTOM2_LOG = .*|CUSTOM2_LOG = \"/home/nginx/domains/\*/log/error.log\"|" /etc/csf/csf.conf
+sed -i "s|CUSTOM3_LOG = .*|CUSTOM3_LOG = \"/var/log/nginx/localhost.access.log\"|" /etc/csf/csf.conf
+sed -i "s|CUSTOM4_LOG = .*|CUSTOM4_LOG = \"/var/log/nginx/localhost.error.log\"|" /etc/csf/csf.conf
+egrep 'CUSTOM1_LOG|CUSTOM2_LOG|CUSTOM3_LOG|CUSTOM4_LOG' /etc/csf/csf.conf
+wget -O /usr/local/csf/bin/regex.custom.pm https://gist.github.com/centminmod/f5551b92b8aba768c3b4db84c57e756d/raw/regex.custom.pm
+csf -ra
+
+#CRON EMAIL
+EMAIL=admin@$MYDOMAIN
+# setup email alerts for diskalert cronjob /etc/cron.daily/diskalert
+# https://community.centminmod.com/posts/59973/
+sed -i "s|EMAIL=.*|EMAIL='\$EMAIL'|" /etc/cron.daily/diskalert
+
+#CLOUDFLARE
+# cloudflare cronjob
+# https://community.centminmod.com/threads/6241/
+crontab -l > cronjoblist
+sed -i '/csfcf.sh/d' cronjoblist
+echo "23 */12 * * * /usr/local/src/centminmod/tools/csfcf.sh auto >/dev/null 2>&1" >> cronjoblist
+crontab cronjoblist
+
+#PHP
+sed -i 's/max_execution_time = 60/max_execution_time = 600/g' /etc/centminmod/php.d/a_customphp.ini
+fpmrestart
+
+#SSL
+cd /usr/local/src/centminmod/addons
+sudo echo -e "y" | ./acmetool.sh acmeinstall
+rm -f /usr/local/nginx/conf/conf.d/virtual.conf
+rm centminmod.sh -f
+centmin
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/vim.sh
+DOMINIO="$MYDOMAIN"
+mv /root/"\$DOMINIO"/aws-config.sh /root/
+sh /root/aws-config.sh
+sh /root/"\$DOMINIO"/ssllabs.sh
+sh /root/"\$DOMINIO"/bk-local.sh
+sh /root/"\$DOMINIO"/rds.sh
+sh /root/"\$DOMINIO"/wordpress.sh
+sh /root/"\$DOMINIO"/permisos.sh
+rm -f vim.sh
+reboot
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/aws-config.sh
+DOMINIO=$MYDOMAIN
+accesskey="$accesskey"
+secretkey="$secretkey"
+yum install python36 -y
+echo -e "y" | pip3 uninstall awscli
+pip3 install awscli --upgrade --user
+export PATH=~/.local/bin:\$PATH
+PATH=~/.local/bin:\$PATH
+chmod 755 .local/bin/aws
+echo -e "\$accesskey\n\$secretkey\nus-east-1\njson\n" | aws configure
+RDSHOSTS=\`aws rds describe-db-instances | sed -n '/Address/p' | sed 's/Address//g; s/://g; s/,//g; s/\\"//g; s/ //g;'\`
+sed -i "s/RDSHOSTS/\$RDSHOSTS/g" \$DOMINIO/*.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/ssllabs.sh
+sed -i 's/TLSv1 TLSv1.1 //g' /usr/local/nginx/conf/ssl_include.conf
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/restart.sh
+fpmrestart
+ngxrestart
+mysqlrestart
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/bk-local.sh
+DOMINIO=$MYDOMAIN
+mkdir /root/"\$DOMINIO"/backups-wp /root/"\$DOMINIO"/backups-db
+cp /home/nginx/domains/"\$DOMINIO"/public/wp-config.php /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php
+find /home/nginx/domains/"\$DOMINIO"/public/. -type f -exec chmod 664 {} +
+find /home/nginx/domains/"\$DOMINIO"/public/. -type d -exec chmod 775 {} +
+chmod 660 /home/nginx/domains/"\$DOMINIO"/public/wp-config.php
+WPDBNAME=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_NAME | cut -d \\' -f 4\`
+WPDBUSER=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_USER | cut -d \\' -f 4\`
+WPDBPASS=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_PASSWORD | cut -d \\' -f 4\`
+cp -ar /home/nginx/domains/"\$DOMINIO" /root/"\$DOMINIO"/backups-wp/local-"\$DOMINIO"
+mysqldump -u "\$WPDBUSER" -h localhost "\$WPDBNAME" -p"\$WPDBPASS" > /root/"\$DOMINIO"/backups-db/local-"\$DOMINIO"-db-bk.sql
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/ejecutelocal.sh
+#EJECUTE BACKUP LOCAL
+DOMINIO="$MYDOMAIN"
+WPDBNAME=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_NAME | cut -d \\' -f 4\`
+WPDBUSER=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_USER | cut -d \\' -f 4\`
+WPDBPASS=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_PASSWORD | cut -d \\' -f 4\`
+rm -r /home/nginx/domains/"\$DOMINIO" --force
+cp -ar /root/"\$DOMINIO"/backups-wp/local-"\$DOMINIO" /home/nginx/domains/"\$DOMINIO"
+mysql -u "\$WPDBUSER" -h localhost "\$WPDBNAME" -p"\$WPDBPASS" < /root/"\$DOMINIO"/backups-db/local-"\$DOMINIO"-db-bk.sql
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/rds.sh
+DOMINIO="$MYDOMAIN"
+MYSERVER="$MYSERVER"
+RDSHOST="RDSHOSTS"
+RDSPASS="$MYDBPASS"
+sed -i 's|TCP_OUT = "3306,|TCP_OUT = "|' /etc/csf/csf.conf
+sed -i 's|TCP_OUT = "|TCP_OUT = "3306,|' /etc/csf/csf.conf
+csf -r
+WPDBNAME=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_NAME | cut -d \\' -f 4\`
+WPDBUSER=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_USER | cut -d \\' -f 4\`
+WPDBPASS=\`cat /home/nginx/domains/"\$DOMINIO"/public/bk-wp-config-local.php | grep DB_PASSWORD | cut -d \\' -f 4\`
+mysql -u "\$MYSERVER" -h"\$RDSHOST" -D "\$MYSERVER" -p"\$RDSPASS" < /root/"\$DOMINIO"/backups-db/local-"\$DOMINIO"-db-bk.sql
+sed -i "s/\$WPDBNAME/\$MYSERVER/g; s/\$WPDBUSER/\$MYSERVER/g; s/localhost/\$RDSHOST/g; s/'\$WPDBPASS'/'\$RDSPASS'/g" /home/nginx/domains/"\$DOMINIO"/public/wp-config.php
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/wordpress.sh
+DOMINIO=$MYDOMAIN
+wp core language install es_ES --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp rewrite structure '/%postname%/' --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp option update blogdescription '' --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp option update posts_per_page 04 --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp option update timezone_string 'America/Bogota' --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp option update start_of_week 1 --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp option update date_format 'd/m/Y' --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp option update users_can_register 1 --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp post delete 1 --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp theme install astra --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin activate akismet --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install https://github.com/iversating/vim/raw/master/plgwp/thrive-visual-editor.zip --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install https://github.com/iversating/vim/raw/master/plgwp/thrive-leads.zip --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install https://github.com/iversating/vim/raw/master/plgwp/thrive-ab-page-testing.zip --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install https://github.com/iversating/vim/raw/master/plgwp/thrive-ultimatum.zip --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install updraftplus --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install duplicate-page --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install wps-menu-exporter --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install duracelltomi-google-tag-manager --activate --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install smartcrawl-seo --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install widget-importer-exporter --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install departamentos-y-ciudades-de-colombia-para-woocommerce --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install post-smtp --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install hummingbird-performance --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install wp-stateless --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install commonwp --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install creame-whatsapp-me --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp plugin install redirection --activate --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp language plugin update --all --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+wp language theme update --all --path=/home/nginx/domains/"\$DOMINIO"/public --allow-root
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/permisos.sh
+DOMINIO="$MYDOMAIN"
+find /home/nginx/domains/"\$DOMINIO"/public/. -type f -exec chmod 664 {} +
+find /home/nginx/domains/"\$DOMINIO"/public/. -type d -exec chmod 775 {} +
+chmod 660 /home/nginx/domains/"\$DOMINIO"/public/wp-config.php
+chmod 777 -R /home/nginx/domains/"\$DOMINIO"/public/wp-content/plugins/updraftplus
+chmod 777 -R /home/nginx/domains/"\$DOMINIO"/public/wp-content/updraft
+chmod 777 /home/nginx/domains/"\$DOMINIO"/public/wp-content/plugins/updraftplus/*
+chmod 777 /home/nginx/domains/"\$DOMINIO"/public/wp-content/updraft/*
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/createbak.sh
+DOMINIO="$MYDOMAIN"
+MYSERVER="$MYSERVER"
+RDSHOST="RDSHOSTS"
+RDSPASS="$MYDBPASS"
+echo ""
+echo -n "Nombre para la copia de seguridad? = "
+read INPUT
+if [ \$INPUT ]; then
+        BAK="\$INPUT"
+fi
+sh /root/"\$DOMINIO"/restart.sh
+cp -ar /home/nginx/domains/"\$DOMINIO" /root/"\$DOMINIO"/backups-wp/"\$BAK"-"\$DOMINIO"
+mysqldump -u "\$MYSERVER" -h"\$RDSHOST" "\$MYSERVER" -p"\$RDSPASS" > /root/"\$DOMINIO"/backups-db/"\$BAK"-db-bk.sql
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/ejecutebak.sh
+#EJECUTE BACKUP
+DOMINIO="$MYDOMAIN"
+MYSERVER="$MYSERVER"
+RDSHOST="RDSHOSTS"
+RDSPASS="$MYDBPASS"
+echo ""
+echo -n "Nombre de la copia de seguridad? = "
+read INPUT
+if [ \$INPUT ]; then
+        BAK="\$INPUT"
+fi
+rm -r /home/nginx/domains/"\$DOMINIO" --force
+cp -ar /root/"\$DOMINIO"/backups-wp/"\$BAK"-"\$DOMINIO" /home/nginx/domains/"\$DOMINIO"
+mysql -u \$MYSERVER -h"\$RDSHOST" -D \$MYSERVER -p"\$RDSPASS" < /root/"\$DOMINIO"/backups-db/"\$BAK"-db-bk.sql
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/deletebak.sh
+#EJECUTE BACKUP
+DOMINIO="$MYDOMAIN"
+MYSERVER="$MYSERVER"
+RDSHOST="RDSHOSTS"
+RDSPASS="$MYDBPASS"
+echo ""
+echo -n "Nombre de la copia a borrar? = "
+read INPUT
+if [ \$INPUT ]; then
+        BAK="\$INPUT"
+fi
+rm -r /root/"\$DOMINIO"/backups-wp/"\$BAK"-"\$DOMINIO" --force
+rm -f /root/"\$DOMINIO"/backups-db/"\$BAK"-db-bk.sql
+sh /root/"\$DOMINIO"/restart.sh
+EOF
+
+cat <<EOF >> $MYDOMAIN/sh/uninstall.sh
+DOMINIO="$MYDOMAIN"
+echo -e "y" | /root/tools/wp_uninstall_"\$DOMINIO".sh
+sh /root/"\$DOMINIO"/restart.sh
+cat .my.cnf
+mysql -u root -p
+EOF
+
+wget -qO terraform.sh https://raw.githubusercontent.com/iversating/vim/master/terraform && sh terraform.sh
+
+rm -f archivos.sh
